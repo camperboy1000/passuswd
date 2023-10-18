@@ -23,3 +23,6 @@ target/
 # Log files (if you are creating logs in debug mode, uncomment this)
 # *.log
 
+# Don't commit the shadow test file
+shadow
+

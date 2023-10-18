@@ -1,7 +1,9 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, BufWriter, Seek},
 };
+
+static FILE_PATH: &str = "shadow";
 
 pub fn set_new_password(username: &String) {
     println!("Changing password for user {}.", username);
@@ -12,7 +14,7 @@ pub fn set_new_password(username: &String) {
         Err(_) => return,
     };
 
-    let file = match File::options().read(true).write(true).open("/etc/shadow") {
+    let file = match File::options().read(true).write(true).open(FILE_PATH) {
         Ok(file) => file,
         Err(_) => {
             println!("I couldn't check your password...");
@@ -21,21 +23,39 @@ pub fn set_new_password(username: &String) {
         }
     };
 
-    let mut line_index = Default::default();
-    let file_reader = BufReader::new(file);
-    let shadow_lines: Vec<String> = file_reader
-        .lines()
-        .map(|line| line.unwrap_or_default())
-        .collect();
+    let mut file_reader = BufReader::new(&file);
+    let file_writer = BufWriter::new(&file);
 
-    for index in 0..shadow_lines.len() {
-        let line: Vec<&str> = shadow_lines[index].split(':').collect();
+    // let shadow_lines: Vec<String> = file_reader
+    // .lines()
+    // .map(|line| line.unwrap_or_default())
+    // .collect();
 
-        if line[0] == username {
-            line_index = index;
+    let mut seek_position = None;
+    let mut line = String::new();
+    let mut line_split: Vec<&str>;
+
+    while let Ok(_) = file_reader.read_line(&mut line) {
+        line_split = line.split(':').collect();
+
+        if line_split[0] == username {
+            seek_position = Some(file_reader.stream_position().unwrap_or_default());
             break;
         }
+
+        line.clear();
     }
 
-    println!("{}", shadow_lines[line_index]);
+    // for index in 0..shadow_lines.len() {
+    //     line = shadow_lines[index].split(':').collect();
+    //
+    //     if line[0] == username {
+    //         seek_position = file_reader.stream_position().unwrap_or_default();
+    //         break;
+    //     }
+    // }
+
+    // file_writer.seek(SeekFrom::into);
+
+    println!("Position {}:\n{}", seek_position.unwrap(), line);
 }
